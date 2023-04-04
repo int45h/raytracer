@@ -6,16 +6,34 @@
 #include <GL/glew.h>
 #include <GL/glu.h>
 
-#include "vec4.h"
+#include "vector.h"
 
 // Ray = O + t*D
 typedef struct ray
 {
-    vec4    origin,
-            hit;
-    float   length;
+    vec4    o,
+            d;
+    float   t;
 }
 ray;
+
+vec4 at(ray &r)
+{
+    return NEW_VECTOR
+    (
+        r.o.xyzw[0] + r.t*r.d.xyzw[0], 
+        r.o.xyzw[1] + r.t*r.d.xyzw[1], 
+        r.o.xyzw[2] + r.t*r.d.xyzw[2], 
+        0
+    );
+}
+
+typedef struct camera
+{
+    float w, h, FOV, ar;
+    uint32_t image;
+}
+camera;
 
 typedef struct Display
 {
@@ -49,6 +67,11 @@ int init_sdl()
     
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,  8);
     
+
+}
+
+void write_img_to_ppm(uint32_t *img, const char * filepath)
+{
 
 }
 
