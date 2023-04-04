@@ -1,5 +1,6 @@
 #pragma once
 #include "vector.h"
+#include "common_math.h"
 typedef union mat4
 {
     float ij[16];

@@ -3,10 +3,12 @@
 #include <cstdio>
 
 #include <SDL2/SDL.h>
-#include <GL/glew.h>
-#include <GL/glu.h>
+//#include <GL/glew.h>
+//#include <GL/glu.h>
 
 #include "vector.h"
+#include "quaternion.h"
+#include "matrix.h"
 
 // Ray = O + t*D
 typedef struct ray
@@ -70,9 +72,26 @@ int init_sdl()
 
 }
 
+void render()
+{
+
+}
+
 void write_img_to_ppm(uint32_t *img, const char * filepath)
 {
 
+}
+
+//void draw_image()
+//{
+//    camera c = NEW_CAMERA();
+//    render();
+//    
+//}
+
+void test()
+{
+    quat q;
 }
 
 int main()

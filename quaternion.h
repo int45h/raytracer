@@ -2,6 +2,7 @@
 #include "vector.h"
 #include "matrix.h"
 
+#include "common_math.h"
 typedef vec4 quat;
 
 #define NEW_QUATERNION(w,x,y,z) NEW_VECTOR(x,y,z,w)
@@ -66,6 +67,71 @@ vec4 qmulv(float *q, float *v)
         v[Vx]+q[Qw]*t[Vx]+(q[Qy]*t[Vz]-q[Qz]*t[Vy]),
         v[Vy]+q[Qw]*t[Vy]+(q[Qx]*t[Vz]-q[Qz]*t[Vx]),
         v[Vz]+q[Qw]*t[Vz]+(q[Qx]*t[Vy]-q[Qy]*t[Vx]),
+        0
+    );
+}
+
+//https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+mat4 qrot_matrix(float *q)
+{
+    float   qxqx = q[Qx]*q[Qx],
+            qxqy = q[Qx]*q[Qy],
+            qxqz = q[Qx]*q[Qz],
+            qyqy = q[Qy]*q[Qy],
+            qyqz = q[Qy]*q[Qz],
+            qzqz = q[Qz]*q[Qz],
+            qwqx = q[Qw]*q[Qx],
+            qwqy = q[Qw]*q[Qy],
+            qwqz = q[Qw]*q[Qz],
+            qwqw = q[Qw]*q[Qw];
+    
+    return NEW_MATRIX
+    (
+        1-2*(qyqy+qzqz), 2*(qxqy-qwqz), 2*(qwqy+qxqz), 0, 
+        2*(qxqy+qwqz), 1-2*(qxqx+qzqz), 2*(qyqz-qwqx), 0, 
+        2*(qxqz-qwqy), 2*(qwqx+qyqz), 1-2*(qxqx+qyqy), 0, 
+        0, 0, 0, 0
+    );
+}
+
+quat qeuler(float *v)
+{
+    float   cr = cos(0.5f*v[Vx]),
+            cp = cos(0.5f*v[Vy]),
+            cy = cos(0.5f*v[Vz]),
+            sr = sin(0.5f*v[Vx]),
+            sp = sin(0.5f*v[Vy]),
+            sy = sin(0.5f*v[Vz]),
+            cpcy = cp*cy,
+            spsy = sp*sy,
+            cpsy = cp*sy,
+            spcy = sp*cy;
+    
+    return NEW_QUATERNION
+    (
+        cr*cpcy+sr*spsy,
+        sr*cpcy-cr*spsy,
+        cr*spcy+sr*cpsy,
+        cr*cpsy-sr*spcy
+    );
+}
+
+vec4 eulerq(float *q)
+{
+    float   qxqx = q[Qx]*q[Qx],
+            qxqy = q[Qx]*q[Qy],
+            qyqy = q[Qy]*q[Qy],
+            qyqz = q[Qy]*q[Qz],
+            qzqz = q[Qz]*q[Qz],
+            qwqx = q[Qw]*q[Qx],
+            qwqz = q[Qw]*q[Qz],
+            _2qwqyqxqz = 2*(q[Qw]*q[Qy]-q[Qx]*q[Qz]);
+    
+    return NEW_VECTOR
+    (
+        atan2(2*(qwqx+qyqz),1-2*(qxqx+qyqy)), 
+        -_PI_2 + 2*(float)atan2(sqrt(1+_2qwqyqxqz),sqrt(1-_2qwqyqxqz)), 
+        atan2(2*(qwqz+qxqy),1-2*(qyqy+qzqz)),
         0
     );
 }
