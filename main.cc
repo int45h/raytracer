@@ -110,6 +110,17 @@ void destroy_display(Display &d)
         free(d.win);
 }
 
+uint32_t default_color(ray &r)
+{
+    vec4 color = vlerp
+    (
+        RGBA8888_TO_VECTOR(0x8cc6ff00).xyzw,
+        RGBA8888_TO_VECTOR(0xe6f3ff00).xyzw,
+        r.d.xyzw[Vy]
+    );
+    return VECTOR_TO_RGBA8888(color.xyzw);
+}
+
 uint32_t trace_ray(ray &r)
 {
     return 0;
