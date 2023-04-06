@@ -125,7 +125,7 @@ void render(camera &c)
         vec4 color = NEW_VECTOR(
             ((float)(i%c.w))/(c.h*c.ar),
             ((float)i/(c.h*c.w)),
-            0,
+            0.25,
             1
         );
 
