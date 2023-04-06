@@ -1,8 +1,13 @@
 #pragma once
 #include <cmath>
+#include <cstdint>
+
 #include "common_math.h"
+#include "common_gfx.h"
 
 #define NEW_VECTOR(x,y,z,w)     (vec4){(float)x,(float)y,(float)z,(float)w}
+#define VECTOR_ZERO             (vec4){0,0,0,0}
+#define VECTOR_ONE              (vec4){1,1,1,0}
 #define NEW_EULER_RAD(y,p,r)    (vec4){_180_PI*(float)x,_180_PI*(float)y,_180_PI*(float)z,0}
 #define NEW_EULER_DEG(y,p,r)    (vec4){(float)x,(float)y,(float)z,0}
 #define Vw 3
@@ -41,6 +46,17 @@ a[3]*b[3])
 (float)op(a[1], b[1], c[1]),\
 (float)op(a[2], b[2], c[2]),\
 (float)op(a[3], b[3], c[3])}
+
+#define RGBA8888_TO_VECTOR(RGBA) NEW_VECTOR(    \
+    CHANNEL(RGBA,R)/255.9f,                     \
+    CHANNEL(RGBA,G)/255.9f,                     \
+    CHANNEL(RGBA,B)/255.9f,                     \
+    CHANNEL(RGBA,A)/255.9f)
+#define VECTOR_TO_RGBA8888(v) (                 \
+        (((int)(v[0]*255.9f))<<24)|             \
+        (((int)(v[1]*255.9f))<<16)|             \
+        (((int)(v[2]*255.9f))<<8)|              \
+        (((int)(v[3]*255.9f))))
 
 typedef union vec4
 {
@@ -89,3 +105,6 @@ vec4 vlerp(float *a, float *b, float t)
 vec4 vsin(float *v){return VECTOR_FUNCTION_OP1(v, sin);}
 vec4 vcos(float *v){return VECTOR_FUNCTION_OP1(v, cos);}
 vec4 vtan(float *v){return VECTOR_FUNCTION_OP1(v, tan);}
+
+vec4 RGBA_to_vec4(uint32_t RGBA)    {return RGBA8888_TO_VECTOR(RGBA);}
+uint32_t vec4_to_RGBA(float *v)     {return VECTOR_TO_RGBA8888(v);}
