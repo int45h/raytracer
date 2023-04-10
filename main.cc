@@ -28,6 +28,18 @@ typedef struct ray
 }
 ray;
 
+ray new_ray(vec4 origin, vec4 direction)
+{
+    ray r = (ray)
+    {
+        origin,
+        direction,
+        -1
+    };
+
+    return r;
+}
+
 vec4 at(ray &r)
 {
     return NEW_VECTOR
@@ -117,12 +129,13 @@ uint32_t default_color(ray &r)
         RGBA8888_TO_VECTOR(0xe6f3ff00).xyzw,
         r.d.xyzw[Vy]
     );
-    return VECTOR_TO_RGBA8888(color.xyzw);
+    uint32_t out = VECTOR_TO_RGB888_32(color.xyzw);
+    return out;
 }
 
 uint32_t trace_ray(ray &r)
 {
-    return 0;
+    return default_color(r);
 }
 
 void render(camera &c)
@@ -130,16 +143,19 @@ void render(camera &c)
     int spp     = 4,
         bounces = 4;
 
+    float tan_fov = tan(c.FOV*0.5f);
     for (int i = 0; i < c.w*c.h; i++)
     {
-        vec4 color = NEW_VECTOR(
-            ((float)(i%c.w))/(c.h*c.ar),
-            ((float)i/(c.h*c.w)),
-            0.25,
-            1
+        float   u = ((float)(i%c.w))/(c.h*c.ar),
+                v = (((float)i)/(c.h*c.w));
+        
+        ray r = new_ray
+        (
+            VECTOR_ZERO, 
+            vnorm(NEW_VECTOR(u, v*tan_fov, 1, 0).xyzw)
         );
-
-        c.image[i] = VECTOR_TO_RGBA8888(color.xyzw);
+        
+        c.image[i] = trace_ray(r);
 
         //if ((i % c.h) == 0) printf("Progress: %d\n", 100*i/(c.w*c.h));
     }
@@ -173,7 +189,7 @@ void draw_image()
     render(c);
     SDL_UnlockSurface(disp.sur);
     disp.tex = SDL_CreateTextureFromSurface(disp.ren, disp.sur);
-    
+
     bool quit = false;
     SDL_Event e;
     do

@@ -2,6 +2,8 @@
 #include <cmath>
 #include <cstdint>
 
+#include <string>
+
 #include "common_math.h"
 #include "common_gfx.h"
 
@@ -58,6 +60,13 @@ a[3]*b[3])
         (((int)(v[2]*255.9f))<<8)|              \
         (((int)(v[3]*255.9f))))
 
+#define VECTOR_TO_RGB888_32(v) (                \
+        (((int)(v[0]*255.9f))<<24)|             \
+        (((int)(v[1]*255.9f))<<16)|             \
+        (((int)(v[2]*255.9f))<<8)|              \
+        255)
+
+
 typedef union vec4
 {
     float xyzw[4];
@@ -108,3 +117,16 @@ vec4 vtan(float *v){return VECTOR_FUNCTION_OP1(v, tan);}
 
 vec4 RGBA_to_vec4(uint32_t RGBA)    {return RGBA8888_TO_VECTOR(RGBA);}
 uint32_t vec4_to_RGBA(float *v)     {return VECTOR_TO_RGBA8888(v);}
+
+std::string vec_to_string(vec4 v)
+{
+    return 
+    (
+        "<" + 
+            std::to_string(v.xyzw[Vx]) + ", " +
+            std::to_string(v.xyzw[Vy]) + ", " +
+            std::to_string(v.xyzw[Vz]) + ", " +
+            std::to_string(v.xyzw[Vw]) + 
+        ">"
+    );
+}
