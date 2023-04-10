@@ -1,5 +1,8 @@
+#include <SDL2/SDL_error.h>
+#include <SDL2/SDL_events.h>
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_render.h>
+#include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_video.h>
 #include <cstdio>
 
@@ -44,7 +47,7 @@ typedef struct camera
     uint32_t *image;
 }
 camera;
-camera new_camera(int w, int h, float FOV)
+camera new_camera(int w, int h, float FOV, uint32_t* image = nullptr)
 {
     camera c = (camera)
     {
@@ -52,7 +55,7 @@ camera new_camera(int w, int h, float FOV)
         .ar=w/(float)h,
         .w=w,
         .h=h,
-        .image=alloc(w*h, uint32_t)
+        .image=(image == nullptr) ? alloc(w*h, uint32_t) : image
     };
     return c;
 }
@@ -60,8 +63,9 @@ camera new_camera(int w, int h, float FOV)
 typedef struct Display
 {
     SDL_Window      *win;
-    SDL_Texture     *tex;
 
+    SDL_Surface     *sur;
+    SDL_Texture     *tex;
     SDL_Renderer    *ren;
 
     size_t w, h;
@@ -81,22 +85,17 @@ Display new_display(int w, int h)
     d.w = w;
     d.h = h;
 
-    SDL_CreateWindowAndRenderer
+    if (SDL_CreateWindowAndRenderer
     (
         w, 
         h, 
         SDL_WINDOW_SHOWN, 
         &d.win, 
         &d.ren
-    );
-    SDL_CreateTexture
-    (
-        d.ren, 
-        SDL_PIXELFORMAT_RGBA8888, 
-        SDL_TEXTUREACCESS_STREAMING, 
-        w, 
-        h
-    );
+    ) != 0)
+        fprintf(stderr, "error: %s\n", SDL_GetError());
+    d.sur = SDL_CreateRGBSurfaceWithFormat(0, w, h, 32, SDL_PIXELFORMAT_RGBA8888);
+    //d.tex = SDL_CreateTextureFromSurface(d.ren, d.sur);
     return d;
 }
 
@@ -142,7 +141,7 @@ void render(camera &c)
 
         c.image[i] = VECTOR_TO_RGBA8888(color.xyzw);
 
-        if ((i % c.h) == 0) printf("Progress: %d\n", 100*i/(c.w*c.h));
+        //if ((i % c.h) == 0) printf("Progress: %d\n", 100*i/(c.w*c.h));
     }
 }
 
@@ -161,15 +160,43 @@ void write_img_to_ppm(camera &c, const char *filepath)
     }
 
     fclose(fp);
+    printf("Successfully saved file to %s!\n", filepath);
 }
 
 void draw_image()
 {
-    camera c = new_camera(640, 480, 90);
-    render(c);
-    write_img_to_ppm(c, "./out.ppm");
+    init_sdl();
+    Display disp = new_display(640, 480);
+    camera c = new_camera(disp.w, disp.h, 90, (uint32_t*)disp.sur->pixels);
 
-    free(c.image);
+    SDL_LockSurface(disp.sur);
+    render(c);
+    SDL_UnlockSurface(disp.sur);
+    disp.tex = SDL_CreateTextureFromSurface(disp.ren, disp.sur);
+    
+    bool quit = false;
+    SDL_Event e;
+    do
+    {
+        SDL_RenderClear(disp.ren);
+        SDL_RenderCopy(disp.ren, disp.tex, NULL, NULL);
+        SDL_RenderPresent(disp.ren);
+    
+        if (!SDL_PollEvent(&e))
+            continue;
+        
+        switch (e.type)
+        {
+            case SDL_QUIT:
+                quit = true;
+            case SDL_KEYUP:
+                if (e.key.keysym.sym == SDLK_p)
+                    write_img_to_ppm(c, "./out.ppm");
+        }
+    }
+    while(!quit);
+
+    destroy_display(disp);
 }
 
 void test()
