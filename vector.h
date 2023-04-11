@@ -50,10 +50,10 @@ a[3]*b[3])
 (float)op(a[3], b[3], c[3])}
 
 #define RGBA8888_TO_VECTOR(RGBA) NEW_VECTOR(    \
-    CHANNEL(RGBA,R)/255.9f,                     \
-    CHANNEL(RGBA,G)/255.9f,                     \
-    CHANNEL(RGBA,B)/255.9f,                     \
-    CHANNEL(RGBA,A)/255.9f)
+    CHANNEL(RGBA,_R)/255.9f,                    \
+    CHANNEL(RGBA,_G)/255.9f,                    \
+    CHANNEL(RGBA,_B)/255.9f,                    \
+    CHANNEL(RGBA,_A)/255.9f)
 #define VECTOR_TO_RGBA8888(v) (                 \
         (((int)(v[0]*255.9f))<<24)|             \
         (((int)(v[1]*255.9f))<<16)|             \

@@ -1,23 +1,14 @@
-#include <SDL2/SDL_error.h>
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_pixels.h>
-#include <SDL2/SDL_render.h>
-#include <SDL2/SDL_surface.h>
-#include <SDL2/SDL_video.h>
 #include <cstdio>
-
-#include <SDL2/SDL.h>
 //#include <GL/glew.h>
 //#include <GL/glu.h>
 
-#include "vector.h"
-#include "quaternion.h"
-#include "matrix.h"
+#include "transform.h"
+#include "camera.h"
 
 #include "common_gfx.h"
+#include "utils.h"
 
-#define alloc(n,T)      (T*)malloc(n*sizeof(T))
-#define copy(d,s,n,T)   memcpy((void*)d, (const void*)s, n*sizeof(T))
+#include "display.h"
 
 // Ray = O + t*D
 typedef struct ray
@@ -51,76 +42,6 @@ vec4 at(ray &r)
     );
 }
 
-typedef struct camera
-{
-    float   FOV, ar;
-    int     w, h;
-    
-    uint32_t *image;
-}
-camera;
-camera new_camera(int w, int h, float FOV, uint32_t* image = nullptr)
-{
-    camera c = (camera)
-    {
-        .FOV=FOV,
-        .ar=w/(float)h,
-        .w=w,
-        .h=h,
-        .image=(image == nullptr) ? alloc(w*h, uint32_t) : image
-    };
-    return c;
-}
-
-typedef struct Display
-{
-    SDL_Window      *win;
-
-    SDL_Surface     *sur;
-    SDL_Texture     *tex;
-    SDL_Renderer    *ren;
-
-    size_t w, h;
-    float ar;
-}
-Display;
-
-int init_sdl()
-{
-    if (!SDL_Init(SDL_INIT_VIDEO))
-        return -1;
-}
-
-Display new_display(int w, int h)
-{
-    Display d;
-    d.w = w;
-    d.h = h;
-
-    if (SDL_CreateWindowAndRenderer
-    (
-        w, 
-        h, 
-        SDL_WINDOW_SHOWN, 
-        &d.win, 
-        &d.ren
-    ) != 0)
-        fprintf(stderr, "error: %s\n", SDL_GetError());
-    d.sur = SDL_CreateRGBSurfaceWithFormat(0, w, h, 32, SDL_PIXELFORMAT_RGBA8888);
-    //d.tex = SDL_CreateTextureFromSurface(d.ren, d.sur);
-    return d;
-}
-
-void destroy_display(Display &d)
-{
-    if (d.tex != NULL)
-        free(d.tex);
-    if (d.ren != NULL)
-        free(d.ren);
-    if (d.win != NULL)
-        free(d.win);
-}
-
 uint32_t default_color(ray &r)
 {
     vec4 color = vlerp
@@ -138,12 +59,14 @@ uint32_t trace_ray(ray &r)
     return default_color(r);
 }
 
-void render(camera &c)
+void render(camera &c, Display &disp)
 {
     int spp     = 4,
         bounces = 4;
 
     float tan_fov = tan(c.FOV*0.5f);
+
+    SDL_LockSurface(disp.sur);
     for (int i = 0; i < c.w*c.h; i++)
     {
         float   u = ((float)(i%c.w))/(c.h*c.ar),
@@ -156,9 +79,11 @@ void render(camera &c)
         );
         
         c.image[i] = trace_ray(r);
-
         //if ((i % c.h) == 0) printf("Progress: %d\n", 100*i/(c.w*c.h));
     }
+
+    SDL_UnlockSurface(disp.sur);
+    disp.tex = SDL_CreateTextureFromSurface(disp.ren, disp.sur);
 }
 
 void write_img_to_ppm(camera &c, const char *filepath)
@@ -170,9 +95,9 @@ void write_img_to_ppm(camera &c, const char *filepath)
     fprintf(fp, "P3\n# %s\n%d %d\n255\n", filepath, c.w, c.h);
     for (int i = 0; i < c.w*c.h; i++)
     {
-        fprintf(fp, "%d %d %d\n", CHANNEL(c.image[i], R),
-                                  CHANNEL(c.image[i], G),
-                                  CHANNEL(c.image[i], B));
+        fprintf(fp, "%d %d %d\n", CHANNEL(c.image[i], _R),
+                                                    CHANNEL(c.image[i], _G),
+                                                    CHANNEL(c.image[i], _B));
     }
 
     fclose(fp);
@@ -182,13 +107,17 @@ void write_img_to_ppm(camera &c, const char *filepath)
 void draw_image()
 {
     init_sdl();
-    Display disp = new_display(640, 480);
-    camera c = new_camera(disp.w, disp.h, 90, (uint32_t*)disp.sur->pixels);
+    Display disp    = new_display(640, 480);
+    camera  c       = new_camera
+    (
+        disp.w, 
+        disp.h, 
+        90, 
+        new_transform(), 
+        (uint32_t*)disp.sur->pixels
+    );
 
-    SDL_LockSurface(disp.sur);
-    render(c);
-    SDL_UnlockSurface(disp.sur);
-    disp.tex = SDL_CreateTextureFromSurface(disp.ren, disp.sur);
+    render(c, disp);
 
     bool quit = false;
     SDL_Event e;

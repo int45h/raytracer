@@ -10,6 +10,7 @@ typedef vec4 quat;
 #define Qx 0
 #define Qy 1
 #define Qz 2
+#define QUATERNION_UNIT         NEW_QUATERNION(0,0,0,1)
 
 quat qnorm(float *q)
 {
