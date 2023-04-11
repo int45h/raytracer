@@ -30,10 +30,10 @@ scene build_test_scene()
 {
     scene s;
     s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, 0, 9, 0))));
-    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, 2, 9, 0))));
-    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, -2, 9, 0))));
-    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(2, 0, 9, 0))));
-    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(-2, 0, 9, 0))));
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, 3, 9, 0))));
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, -3, 9, 0))));
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(3, 0, 9, 0))));
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(-3, 0, 9, 0))));
     
     
     return s;
