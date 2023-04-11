@@ -18,6 +18,8 @@ int init_sdl()
 {
     if (!SDL_Init(SDL_INIT_VIDEO))
         return -1;
+
+    return 1;
 }
 
 Display new_display(int w, int h)

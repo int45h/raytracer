@@ -1,45 +1,50 @@
 #include <cstdio>
+#include <vector>
 //#include <GL/glew.h>
 //#include <GL/glu.h>
 
-#include "transform.h"
+#include "ray.h"
 #include "camera.h"
 
 #include "common_gfx.h"
 #include "utils.h"
 
 #include "display.h"
+#include "vector.h"
 
-// Ray = O + t*D
-typedef struct ray
+typedef struct scene
 {
-    vec4    o,
-            d;
-    float   t;
+    std::vector<ray_object> objects;
 }
-ray;
+scene;
 
-ray new_ray(vec4 origin, vec4 direction)
+void destroy_scene(scene &s)
 {
-    ray r = (ray)
-    {
-        origin,
-        direction,
-        -1
-    };
-
-    return r;
+    for (ray_object &obj : s.objects)
+        destroy_ray_object(obj);
+    
+    s.objects.clear();
 }
 
-vec4 at(ray &r)
+scene build_test_scene()
 {
-    return NEW_VECTOR
-    (
-        r.o.xyzw[0] + r.t*r.d.xyzw[0], 
-        r.o.xyzw[1] + r.t*r.d.xyzw[1], 
-        r.o.xyzw[2] + r.t*r.d.xyzw[2], 
-        0
-    );
+    scene s;
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, 0, 9, 0))));
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, 2, 9, 0))));
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, -2, 9, 0))));
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(2, 0, 9, 0))));
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(-2, 0, 9, 0))));
+    
+    
+    return s;
+}
+
+bool hit_object_in_scene(ray &r, scene &s)
+{
+    for (ray_object obj : s.objects){
+        if (hit_object(r, obj)) return true;
+    }
+    return false;
 }
 
 uint32_t default_color(ray &r)
@@ -54,12 +59,15 @@ uint32_t default_color(ray &r)
     return out;
 }
 
-uint32_t trace_ray(ray &r)
+uint32_t trace_ray(ray &r, scene &s)
 {
+    if (hit_object_in_scene(r, s))
+        return 0xFF0000FF;
+    
     return default_color(r);
 }
 
-void render(camera &c, Display &disp)
+void render(camera &c, Display &disp, scene &s)
 {
     int spp     = 4,
         bounces = 4;
@@ -69,16 +77,16 @@ void render(camera &c, Display &disp)
     SDL_LockSurface(disp.sur);
     for (int i = 0; i < c.w*c.h; i++)
     {
-        float   u = ((float)(i%c.w))/(c.h*c.ar),
+        float   u = ((float)(i%c.w))/(c.w),
                 v = (((float)i)/(c.h*c.w));
         
         ray r = new_ray
         (
             VECTOR_ZERO, 
-            vnorm(NEW_VECTOR(u, v*tan_fov, 1, 0).xyzw)
+            NEW_VECTOR((2*u-1)*c.ar, 2*v-1, 1, 0)//vnorm(NEW_VECTOR(u, v, 1, 0).xyzw)
         );
         
-        c.image[i] = trace_ray(r);
+        c.image[i] = trace_ray(r, s);
         //if ((i % c.h) == 0) printf("Progress: %d\n", 100*i/(c.w*c.h));
     }
 
@@ -116,8 +124,9 @@ void draw_image()
         new_transform(), 
         (uint32_t*)disp.sur->pixels
     );
+    scene s = build_test_scene();
 
-    render(c, disp);
+    render(c, disp, s);
 
     bool quit = false;
     SDL_Event e;
@@ -141,6 +150,7 @@ void draw_image()
     }
     while(!quit);
 
+    destroy_scene(s);
     destroy_display(disp);
 }
 
