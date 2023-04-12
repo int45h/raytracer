@@ -6,6 +6,8 @@
 #define _PI_180     0.01745329251
 #define _180_PI     57.2957795131
 
+#define FLOAT_EPSILON 0.000001f
+
 float max(float a, float b){return (a>b)?a:b;}
 float min(float a, float b){return (a<b)?a:b;}
 float clamp(float x, float l, float u){return min(max(x, l), u);}

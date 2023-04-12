@@ -32,6 +32,10 @@ a[0]*b[0] + \
 a[1]*b[1] + \
 a[2]*b[2] + \
 a[3]*b[3])
+#define VECTOR_DOT3(a,b) (\
+a[0]*b[0] + \
+a[1]*b[1] + \
+a[2]*b[2])
 
 #define VECTOR_FUNCTION_OP1(a,op) (vec4){\
 (float)op(a[0]),\
@@ -92,7 +96,7 @@ typedef union vec4
     inline vec4 operator*=(const float& rhs){return *this=VECTOR_SCALAR_OP(this->xyzw, rhs, *);}
     inline vec4 operator/=(const float& rhs){return *this=VECTOR_SCALAR_OP(this->xyzw, rhs, /);}
 
-    inline float dot(const vec4& a)                        {return VECTOR_DOT(this->xyzw,a.xyzw);}
+    inline float dot(const vec4& a)                        {return VECTOR_DOT3(this->xyzw,a.xyzw);}
 
     inline float length_sq()   {return VECTOR_DOT(this->xyzw,this->xyzw);}
     inline float length()      {return sqrt(VECTOR_DOT(this->xyzw,this->xyzw));}
@@ -112,7 +116,7 @@ typedef union vec4
         );
     }
 
-    inline std::string to_string()
+    std::string to_string()
     {
         return 
         (
@@ -126,7 +130,7 @@ typedef union vec4
     }
 
     // Static methods
-    static inline float dot(const vec4& a, const vec4& b)  {return VECTOR_DOT(a.xyzw,b.xyzw);}
+    static inline float dot(const vec4& a, const vec4& b)  {return VECTOR_DOT3(a.xyzw,b.xyzw);}
 
     static inline float length_sq(const vec4& v)   {return VECTOR_DOT(v.xyzw,v.xyzw);}
     static inline float length(const vec4& v)      {return sqrt(VECTOR_DOT(v.xyzw,v.xyzw));}
@@ -160,6 +164,10 @@ typedef union vec4
             .z=Sc_lerp(a.xyzw[2], b.xyzw[2], t),
             .w=Sc_lerp(a.xyzw[3], b.xyzw[3], t)
         };
+    }
+    static inline float stp(const vec4& a, const vec4& b, const vec4& c)
+    {
+        return vec4::dot(vec4::cross(b,c),a);
     }
 
     static inline std::string to_string(vec4 v)

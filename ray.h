@@ -1,4 +1,5 @@
 #pragma once
+#include "common_math.h"
 #include "transform.h"
 #include "vector.h"
 
@@ -48,6 +49,16 @@ typedef struct ray_object
     int     *indices;
 
     size_t vertex_size = 3; // vertex size in bytes, 3 for now
+
+    inline vec4 vpos(int index)
+    {
+        return NEW_VECTOR
+        (
+            this->vertices[this->indices[index]*this->vertex_size+0],
+            this->vertices[this->indices[index]*this->vertex_size+1],
+            this->vertices[this->indices[index]*this->vertex_size+2]
+        );
+    }
 
     bool hit    (ray &r);
     vec4 norm   (ray &r);
@@ -122,17 +133,43 @@ bool hit_sphere(ray &r, ray_object &obj)
     return false;
 }
 
-bool hit_triangle(ray &r, ray_object &obj)
+bool hit_triangle(ray &r, ray_object &obj, const vec4& v1, const vec4& v2, const vec4& v3)
 {
-    return false;
+    vec4    e1  = v2 - v1,
+            e2  = v3 - v1,
+            P   = vec4::cross(r.d, e2);
+
+    // Test for parallel ray
+    float det = vec4::dot(P, e1);
+    if (fabs(det) < FLOAT_EPSILON)
+        return false;
+
+    //printf("%s\n", r.d.to_string().c_str());
+
+    // Moller-Trumbore algorithm
+    vec4    T   = r.o - v1,
+            Q   = vec4::cross(T,    e1);
+    
+    float   inv_det = 1 / det,
+            t       = vec4::dot(e2,  Q)*inv_det,
+            u       = vec4::dot(T,   P)*inv_det,
+            v       = vec4::dot(r.d, Q)*inv_det;
+
+    //printf("%f, %f, %f\n", t, u, v);
+
+    if (u < FLOAT_EPSILON || u > 1)     return false;
+    if (v < FLOAT_EPSILON || (u+v) > 1) return false;
+
+    r.t = t;
+    return true;
 }
 
 vec4 sphere_norm(ray &r, ray_object &obj)   {return (obj.t.position - r.at()) / obj.t.scale.xyzw[0];}
 vec4 triangle_norm(ray &r, ray_object &obj)
 {
-    vec4    v1 = NEW_VECTOR(obj.vertices[obj.indices[0]*obj.vertex_size+0],obj.vertices[obj.indices[0]*obj.vertex_size+1],obj.vertices[obj.indices[0]*obj.vertex_size+2]), 
-            v2 = NEW_VECTOR(obj.vertices[obj.indices[1]*obj.vertex_size+0],obj.vertices[obj.indices[1]*obj.vertex_size+1],obj.vertices[obj.indices[1]*obj.vertex_size+2]),
-            v3 = NEW_VECTOR(obj.vertices[obj.indices[2]*obj.vertex_size+0],obj.vertices[obj.indices[2]*obj.vertex_size+1],obj.vertices[obj.indices[2]*obj.vertex_size+2]);
+    vec4    v1 = obj.vpos(0), 
+            v2 = obj.vpos(1),
+            v3 = obj.vpos(2);
 
     return vec4::norm(vec4::cross(v2-v1,v3-v1));
 }
@@ -142,7 +179,17 @@ bool ray_object::hit(ray &r)
     switch (this->type)
     {
         case SPHERE:    return hit_sphere(r, *this);
-        case TRIANGLE:  return hit_triangle(r, *this);
+        case TRIANGLE:  
+        {
+            vec4    v1 = vpos(0),
+                    v2 = vpos(1),
+                    v3 = vpos(2);
+            //printf("%s, %s, %s\n", 
+            //    v1.to_string().c_str(),
+            //    v2.to_string().c_str(),
+            //    v3.to_string().c_str());
+            return hit_triangle(r, *this, v1, v2, v3);
+        }
     }
     return false;
 }

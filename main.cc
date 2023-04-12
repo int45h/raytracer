@@ -30,13 +30,20 @@ void destroy_scene(scene &s)
 scene build_test_scene()
 {
     scene s;
-    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, 0, 9, 0))));
-    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, 3, 9, 0))));
-    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, -3, 9, 0))));
-    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(3, 0, 9, 0))));
-    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(-3, 0, 9, 0))));
+    //s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, 0, 9, 0))));
+    //s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, 3, 9, 0))));
+    //s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, -3, 9, 0))));
+    //s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(3, 0, 9, 0))));
+    //s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(-3, 0, 9, 0))));
     
+    ray_object t = new_triangle(alloc(9, float), alloc(3, int), new_transform());
+    t.vertices[0] = -0.5f; t.vertices[1] = -0.5f; t.vertices[2] = 1.f;
+    t.vertices[3] = +0.5f; t.vertices[4] = -0.5f; t.vertices[5] = 1.f;
+    t.vertices[6] =  0.0f; t.vertices[7] = +0.5f; t.vertices[8] = 1.f;
     
+    t.indices[0] = 0; t.indices[1] = 1; t.indices[2] = 2;
+    s.objects.push_back(t);
+
     return s;
 }
 
@@ -93,7 +100,7 @@ void render(camera &c, Display &disp, scene &s)
         ray r
         (
             VECTOR_ZERO, 
-            NEW_VECTOR((2*u-1)*c.ar, 2*v-1, 1, 0)//vnorm(NEW_VECTOR(u, v, 1, 0).xyzw)
+            NEW_VECTOR((2*u-1)*c.ar, 2*v-1, 1, 0)//vnorm(NEW_VECTOR((2*u-1)*c.ar, 2*v-1, 1, 0).xyzw)
         );
         
         c.image[i] = trace_ray(r, s);
