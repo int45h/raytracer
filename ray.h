@@ -8,34 +8,31 @@ typedef struct ray
     vec4    o,
             d;
     float   t;
+
+    ray(const vec4& origin, const vec4& direction)
+    {
+        this->o = origin;
+        this->d = direction;
+
+        this->t = -1;
+    }
+
+    inline vec4 at()
+    {
+        return NEW_VECTOR
+        (
+            this->o.xyzw[0] + this->t*this->d.xyzw[0], 
+            this->o.xyzw[1] + this->t*this->d.xyzw[1], 
+            this->o.xyzw[2] + this->t*this->d.xyzw[2], 
+            0
+        );
+    }
 }
 ray;
 
-ray new_ray(vec4 origin, vec4 direction)
-{
-    ray r = (ray)
-    {
-        origin,
-        direction,
-        -1
-    };
-
-    return r;
-}
-
-vec4 at(ray &r)
-{
-    return NEW_VECTOR
-    (
-        r.o.xyzw[0] + r.t*r.d.xyzw[0], 
-        r.o.xyzw[1] + r.t*r.d.xyzw[1], 
-        r.o.xyzw[2] + r.t*r.d.xyzw[2], 
-        0
-    );
-}
-
 typedef enum geometry_type
 {
+    NONE,
     SPHERE,
     TRIANGLE,
     MESH
@@ -51,8 +48,19 @@ typedef struct ray_object
     int     *indices;
 
     size_t vertex_size = 3; // vertex size in bytes, 3 for now
+
+    bool hit    (ray &r);
+    vec4 norm   (ray &r);
 }
 ray_object;
+
+ray_object new_empty()
+{
+    ray_object r;
+    r.type = NONE;
+
+    return r;
+}
 
 ray_object new_sphere(transform t, float radius = 1.f)
 {
@@ -88,12 +96,12 @@ void destroy_ray_object(ray_object &r)
 
 bool hit_sphere(ray &r, ray_object &obj)
 {
-    vec4    o_prime = vsub(r.o.xyzw, obj.t.position.xyzw);
-    float   od      = vdot(o_prime.xyzw, r.d.xyzw),
+    vec4    o_prime = r.o - obj.t.position;
+    float   od      = vec4::dot(o_prime, r.d),
             R       = obj.t.scale.xyzw[0],
-            a       = vdot(r.d.xyzw, r.d.xyzw),
+            a       = vec4::length_sq(r.d),
             b       = od,
-            c       = vdot(o_prime.xyzw, o_prime.xyzw) - R*R,
+            c       = vec4::length_sq(o_prime) - R*R,
             disc    = b*b - a*c;
 
     if (disc < 0)
@@ -119,12 +127,32 @@ bool hit_triangle(ray &r, ray_object &obj)
     return false;
 }
 
-bool hit_object(ray &r, ray_object &obj)
+vec4 sphere_norm(ray &r, ray_object &obj)   {return (obj.t.position - r.at()) / obj.t.scale.xyzw[0];}
+vec4 triangle_norm(ray &r, ray_object &obj)
 {
-    switch (obj.type)
+    vec4    v1 = NEW_VECTOR(obj.vertices[obj.indices[0]*obj.vertex_size+0],obj.vertices[obj.indices[0]*obj.vertex_size+1],obj.vertices[obj.indices[0]*obj.vertex_size+2]), 
+            v2 = NEW_VECTOR(obj.vertices[obj.indices[1]*obj.vertex_size+0],obj.vertices[obj.indices[1]*obj.vertex_size+1],obj.vertices[obj.indices[1]*obj.vertex_size+2]),
+            v3 = NEW_VECTOR(obj.vertices[obj.indices[2]*obj.vertex_size+0],obj.vertices[obj.indices[2]*obj.vertex_size+1],obj.vertices[obj.indices[2]*obj.vertex_size+2]);
+
+    return vec4::norm(vec4::cross(v2-v1,v3-v1));
+}
+
+bool ray_object::hit(ray &r)
+{
+    switch (this->type)
     {
-        case SPHERE:    return hit_sphere(r, obj);
-        case TRIANGLE:  return hit_triangle(r, obj);
+        case SPHERE:    return hit_sphere(r, *this);
+        case TRIANGLE:  return hit_triangle(r, *this);
     }
     return false;
+}
+
+vec4 ray_object::norm(ray &r)
+{
+    switch (this->type)
+    {
+        case SPHERE:    return sphere_norm(r, *this);
+        case TRIANGLE:  return triangle_norm(r, *this);
+    }
+    return VECTOR_ZERO;
 }

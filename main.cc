@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <cstdio>
 #include <vector>
 //#include <GL/glew.h>
@@ -39,10 +40,15 @@ scene build_test_scene()
     return s;
 }
 
-bool hit_object_in_scene(ray &r, scene &s)
+bool hit_object_in_scene(ray &r, scene &s, ray_object& out)
 {
-    for (ray_object obj : s.objects){
-        if (hit_object(r, obj)) return true;
+    for (ray_object obj : s.objects)
+    {
+        if (obj.hit(r)) 
+        {
+            out = obj;
+            return true;
+        }
     }
     return false;
 }
@@ -61,10 +67,14 @@ uint32_t default_color(ray &r)
 
 uint32_t trace_ray(ray &r, scene &s)
 {
-    if (hit_object_in_scene(r, s))
-        return 0xFF0000FF;
-    
-    return default_color(r);
+    ray_object obj = new_empty();
+    if (!hit_object_in_scene(r, s, obj))
+        return default_color(r);
+
+    vec4 N = obj.norm(r);
+    N = (N*0.5f)+0.5f;
+
+    return VECTOR_TO_RGB888_32(N.xyzw);
 }
 
 void render(camera &c, Display &disp, scene &s)
@@ -80,7 +90,7 @@ void render(camera &c, Display &disp, scene &s)
         float   u = ((float)(i%c.w))/(c.w),
                 v = (((float)i)/(c.h*c.w));
         
-        ray r = new_ray
+        ray r
         (
             VECTOR_ZERO, 
             NEW_VECTOR((2*u-1)*c.ar, 2*v-1, 1, 0)//vnorm(NEW_VECTOR(u, v, 1, 0).xyzw)

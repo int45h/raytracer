@@ -46,7 +46,7 @@ transform new_transform(vec4 position = VECTOR_ZERO, quat rotation = QUATERNION_
 
 void translate(vec4 deltaPos, transform &t)
 {
-    t.position = vadd(t.position.xyzw, deltaPos.xyzw);
+    t.position += deltaPos;
     rebuild_TRS(t);
 }
 

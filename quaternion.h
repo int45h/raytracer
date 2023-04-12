@@ -130,9 +130,9 @@ vec4 eulerq(float *q)
     
     return NEW_VECTOR
     (
-        atan2(2*(qwqx+qyqz),1-2*(qxqx+qyqy)), 
-        -_PI_2 + 2*(float)atan2(sqrt(1+_2qwqyqxqz),sqrt(1-_2qwqyqxqz)), 
-        atan2(2*(qwqz+qxqy),1-2*(qyqy+qzqz)),
+        (float)atan2(2*(qwqx+qyqz),1-2*(qxqx+qyqy)), 
+        (float)-_PI_2 + 2*(float)atan2(sqrt(1+_2qwqyqxqz),sqrt(1-_2qwqyqxqz)), 
+        (float)atan2(2*(qwqz+qxqy),1-2*(qyqy+qzqz)),
         0
     );
 }
