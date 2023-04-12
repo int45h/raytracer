@@ -140,16 +140,17 @@ bool hit_triangle(ray &r, ray_object &obj, const vec4& v1, const vec4& v2, const
             P   = vec4::cross(r.d, e2);
 
     // Test for parallel ray
-    float det = vec4::dot(P, e1);
-    if (fabs(det) < FLOAT_EPSILON)
+    float N = vec4::dot(vec4::cross(e2,e1).norm(), r.d);
+    if (fabs(N) < FLOAT_EPSILON)
         return false;
 
-    //printf("%s\n", r.d.to_string().c_str());
+    printf("%s\n", e2.to_string().c_str());
 
     // Moller-Trumbore algorithm
     vec4    T   = r.o - v1,
             Q   = vec4::cross(T,    e1);
     
+    float   det     = vec4::dot(P,  e1);
     float   inv_det = 1 / det,
             t       = vec4::dot(e2,  Q)*inv_det,
             u       = vec4::dot(T,   P)*inv_det,

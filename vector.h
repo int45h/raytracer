@@ -98,13 +98,14 @@ typedef union vec4
 
     inline float dot(const vec4& a)                        {return VECTOR_DOT3(this->xyzw,a.xyzw);}
 
-    inline float length_sq()   {return VECTOR_DOT(this->xyzw,this->xyzw);}
-    inline float length()      {return sqrt(VECTOR_DOT(this->xyzw,this->xyzw));}
-    inline float inv_length()  {return 1/sqrt(VECTOR_DOT(this->xyzw,this->xyzw));}
+    inline float length_sq()    {return VECTOR_DOT(this->xyzw,this->xyzw);}
+    inline float length()       {return sqrt(VECTOR_DOT(this->xyzw,this->xyzw));}
+    inline float inv_length()   {return 1/sqrt(VECTOR_DOT(this->xyzw,this->xyzw));}
 
-    inline float q_length()    {return q_sqrt(VECTOR_DOT(this->xyzw,this->xyzw));}
-    inline float q_invlength() {return q_rsqrt(VECTOR_DOT(this->xyzw,this->xyzw));}
+    inline float q_length()     {return q_sqrt(VECTOR_DOT(this->xyzw,this->xyzw));}
+    inline float q_invlength()  {return q_rsqrt(VECTOR_DOT(this->xyzw,this->xyzw));}
 
+    inline vec4 norm()          {return *this*inv_length(*this);}
     inline vec4 cross(const vec4& a)
     {
         return NEW_VECTOR
