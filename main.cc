@@ -1,9 +1,11 @@
 #include <cstdint>
 #include <cstdio>
+#include <limits>
 #include <vector>
 //#include <GL/glew.h>
 //#include <GL/glu.h>
 
+#include "common_math.h"
 #include "ray.h"
 #include "camera.h"
 
@@ -30,16 +32,15 @@ void destroy_scene(scene &s)
 scene build_test_scene()
 {
     scene s;
-    //s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, 0, 9, 0))));
-    //s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, 3, 9, 0))));
-    //s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, -3, 9, 0))));
-    //s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(3, 0, 9, 0))));
-    //s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(-3, 0, 9, 0))));
-    
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, 0, 9, 0))));
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, 3, 9, 0))));
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, -3, 9, 0))));
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(3, 0, 9, 0))));
+    s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(-3, 0, 9, 0))));
     ray_object t = new_triangle(alloc(9, float), alloc(3, int), new_transform());
     t.vertices[0] = -0.5f; t.vertices[1] = -0.5f; t.vertices[2] = 1.f;
     t.vertices[3] = +0.5f; t.vertices[4] = -0.5f; t.vertices[5] = 1.f;
-    t.vertices[6] =  0.0f; t.vertices[7] = +0.5f; t.vertices[8] = 1.f;
+    t.vertices[6] = +0.0f; t.vertices[7] = +0.5f; t.vertices[8] = 1.f;
     
     t.indices[0] = 0; t.indices[1] = 1; t.indices[2] = 2;
     s.objects.push_back(t);
@@ -49,24 +50,34 @@ scene build_test_scene()
 
 bool hit_object_in_scene(ray &r, scene &s, ray_object& out)
 {
+    // Simple distance based search
+    float   closest_hit = r.t;
+    bool    hit_found   = false;
+    
     for (ray_object obj : s.objects)
     {
-        if (obj.hit(r)) 
+        if (!obj.hit(r)) 
+            continue;
+        
+        if (closest_hit > r.t)
         {
-            out = obj;
-            return true;
+            hit_found   = true;
+            closest_hit = r.t;
+            out         = obj;
         }
     }
-    return false;
+
+    return hit_found;
 }
 
 uint32_t default_color(ray &r)
 {
-    vec4 color = vlerp
+    float t = 0.5f*r.d.xyzw[Vy]+0.5f;
+    vec4 color = vec4::vlerp_clamped
     (
-        RGBA8888_TO_VECTOR(0x8cc6ff00).xyzw,
-        RGBA8888_TO_VECTOR(0xe6f3ff00).xyzw,
-        r.d.xyzw[Vy]
+        RGBA8888_TO_VECTOR(0xe6f3ff00),
+        RGBA8888_TO_VECTOR(0x8cc6ff00),
+        t
     );
     uint32_t out = VECTOR_TO_RGB888_32(color.xyzw);
     return out;
@@ -89,18 +100,23 @@ void render(camera &c, Display &disp, scene &s)
     int spp     = 4,
         bounces = 4;
 
-    float tan_fov = tan(c.FOV*0.5f);
+    float tan_fov = tan(c.FOV*0.5f*_PI_180);
 
     SDL_LockSurface(disp.sur);
     for (int i = 0; i < c.w*c.h; i++)
     {
-        float   u = ((float)(i%c.w))/(c.w),
-                v = (((float)i)/(c.h*c.w));
+        float   u = (float)(i%c.w),
+                v = ((float)i)/c.w;
         
         ray r
         (
             VECTOR_ZERO, 
-            NEW_VECTOR((2*u-1)*c.ar, 2*v-1, 1, 0)//vnorm(NEW_VECTOR((2*u-1)*c.ar, 2*v-1, 1, 0).xyzw)
+            vec4::norm(NEW_VECTOR(
+                (2*(u+0.5f)/c.w-1)*tan_fov*c.ar, 
+                (1-2*(v+0.5f)/c.h)*tan_fov, 
+                1, 
+                0
+            ))
         );
         
         c.image[i] = trace_ray(r, s);

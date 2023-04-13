@@ -1,5 +1,6 @@
 #pragma once
-#include "stdint.h"
+#include <cstdint>
+#include <limits>
 
 #define PI          3.14159265359
 #define _PI_2       1.57079632679

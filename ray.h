@@ -2,6 +2,7 @@
 #include "common_math.h"
 #include "transform.h"
 #include "vector.h"
+#include <limits>
 
 // Ray = O + t*D
 typedef struct ray
@@ -15,7 +16,7 @@ typedef struct ray
         this->o = origin;
         this->d = direction;
 
-        this->t = -1;
+        this->t = std::numeric_limits<float>::max();
     }
 
     inline vec4 at()
@@ -135,22 +136,19 @@ bool hit_sphere(ray &r, ray_object &obj)
 
 bool hit_triangle(ray &r, ray_object &obj, const vec4& v1, const vec4& v2, const vec4& v3)
 {
-    vec4    e1  = v2 - v1,
-            e2  = v3 - v1,
+    vec4    e1  = (v2 - v1),
+            e2  = (v3 - v1),
             P   = vec4::cross(r.d, e2);
-
+    float   det = vec4::dot(P, e1);
+    
     // Test for parallel ray
-    float N = vec4::dot(vec4::cross(e2,e1).norm(), r.d);
-    if (fabs(N) < FLOAT_EPSILON)
+    if (fabs(det) < FLOAT_EPSILON)
         return false;
-
-    printf("%s\n", e2.to_string().c_str());
 
     // Moller-Trumbore algorithm
     vec4    T   = r.o - v1,
-            Q   = vec4::cross(T,    e1);
+            Q   = vec4::cross(T, e1);
     
-    float   det     = vec4::dot(P,  e1);
     float   inv_det = 1 / det,
             t       = vec4::dot(e2,  Q)*inv_det,
             u       = vec4::dot(T,   P)*inv_det,
@@ -159,7 +157,7 @@ bool hit_triangle(ray &r, ray_object &obj, const vec4& v1, const vec4& v2, const
     //printf("%f, %f, %f\n", t, u, v);
 
     if (u < FLOAT_EPSILON || u > 1)     return false;
-    if (v < FLOAT_EPSILON || (u+v) > 1) return false;
+    if (v < FLOAT_EPSILON || u+v > 1)   return false;
 
     r.t = t;
     return true;
@@ -185,10 +183,7 @@ bool ray_object::hit(ray &r)
             vec4    v1 = vpos(0),
                     v2 = vpos(1),
                     v3 = vpos(2);
-            //printf("%s, %s, %s\n", 
-            //    v1.to_string().c_str(),
-            //    v2.to_string().c_str(),
-            //    v3.to_string().c_str());
+            
             return hit_triangle(r, *this, v1, v2, v3);
         }
     }

@@ -111,13 +111,25 @@ typedef union vec4
         return NEW_VECTOR
         (
             +this->xyzw[1]*a.xyzw[2]-this->xyzw[2]*a.xyzw[1], 
-            -this->xyzw[0]*a.xyzw[2]-this->xyzw[2]*a.xyzw[0], 
+            -this->xyzw[0]*a.xyzw[2]+this->xyzw[2]*a.xyzw[0], 
             +this->xyzw[0]*a.xyzw[1]-this->xyzw[1]*a.xyzw[0], 
             0
         );
     }
 
-    std::string to_string()
+    inline std::string to_string() const
+    {
+        return 
+        (
+            "<" + 
+                std::to_string(this->xyzw[Vx]) + ", " +
+                std::to_string(this->xyzw[Vy]) + ", " +
+                std::to_string(this->xyzw[Vz]) + ", " +
+                std::to_string(this->xyzw[Vw]) + 
+            ">"
+        );
+    }
+    inline std::string to_string() 
     {
         return 
         (
@@ -147,7 +159,7 @@ typedef union vec4
         return NEW_VECTOR
         (
             +a.xyzw[1]*b.xyzw[2]-a.xyzw[2]*b.xyzw[1], 
-            -a.xyzw[0]*b.xyzw[2]-a.xyzw[2]*b.xyzw[0], 
+            -a.xyzw[0]*b.xyzw[2]+a.xyzw[2]*b.xyzw[0], 
             +a.xyzw[0]*b.xyzw[1]-a.xyzw[1]*b.xyzw[0], 
             0
         );
@@ -165,6 +177,11 @@ typedef union vec4
             .z=Sc_lerp(a.xyzw[2], b.xyzw[2], t),
             .w=Sc_lerp(a.xyzw[3], b.xyzw[3], t)
         };
+    }
+    static inline vec4 vlerp_clamped(const vec4& a, const vec4& b, float t)
+    {
+        t = Sc_clamp(t, 0, 1);
+        return vec4::vlerp(a, b, t);
     }
     static inline float stp(const vec4& a, const vec4& b, const vec4& c)
     {
@@ -195,7 +212,7 @@ vec4 vcross(float *a, float *b)
     return NEW_VECTOR
     (
         +a[1]*b[2]-a[2]*b[1], 
-        -a[0]*b[2]-a[2]*b[0], 
+        -a[0]*b[2]+a[2]*b[0], 
         +a[0]*b[1]-a[1]*b[0], 
         0
     );
