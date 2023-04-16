@@ -2,6 +2,7 @@
 #include "common_math.h"
 #include "transform.h"
 #include "vector.h"
+#include <cmath>
 #include <limits>
 
 // Ray = O + t*D
@@ -37,6 +38,7 @@ typedef enum geometry_type
     NONE,
     SPHERE,
     TRIANGLE,
+    ALIGNED_BOX,
     MESH
 }
 geometry_type;
@@ -49,7 +51,8 @@ typedef struct ray_object
     float   *vertices;
     int     *indices;
 
-    size_t vertex_size = 3; // vertex size in bytes, 3 for now
+    size_t  vertex_size = 3;    // vertex size in bytes, 3 for now
+    vec4    lb, ub;             // lower and upper bounds of a bounding box 
 
     inline vec4 vpos(int index)
     {
@@ -60,7 +63,6 @@ typedef struct ray_object
             this->vertices[this->indices[index]*this->vertex_size+2]
         );
     }
-
     bool hit    (ray &r);
     vec4 norm   (ray &r);
 }
@@ -92,6 +94,17 @@ ray_object new_triangle(float *vertices, int* indices, transform t)
     r.type      = TRIANGLE;
     r.vertices  = vertices;
     r.indices   = indices;
+
+    return r;
+}
+
+ray_object new_box(vec4 lb, vec4 ub)
+{
+    ray_object r;
+
+    r.type      = ALIGNED_BOX;
+    r.lb        = lb;
+    r.ub        = ub;
 
     return r;
 }
@@ -154,12 +167,30 @@ bool hit_triangle(ray &r, ray_object &obj, const vec4& v1, const vec4& v2, const
             u       = vec4::dot(T,   P)*inv_det,
             v       = vec4::dot(r.d, Q)*inv_det;
 
-    //printf("%f, %f, %f\n", t, u, v);
-
     if (u < FLOAT_EPSILON || u > 1)     return false;
     if (v < FLOAT_EPSILON || u+v > 1)   return false;
 
     r.t = t;
+    return true;
+}
+
+bool hit_box(ray &r, ray_object &obj)
+{
+    float   fact    = 1 / vec4::length(obj.ub - obj.lb);
+    vec4    t_vec   = NEW_VECTOR
+            (
+                ((r.d.xyzw[Vx] <= obj.ub.xyzw[Vx] * fact && r.d.xyzw[Vx
+                
+                ] >= obj.lb.xyzw[Vx] * fact) ? 1 : std::numeric_limits<float>::quiet_NaN()),
+                ((r.d.xyzw[Vy] <= obj.ub.xyzw[Vy] * fact && r.d.xyzw[Vy] >= obj.lb.xyzw[Vy] * fact) ? 1 : std::numeric_limits<float>::quiet_NaN()),
+                ((r.d.xyzw[Vz] <= obj.ub.xyzw[Vz] * fact && r.d.xyzw[Vz] >= obj.lb.xyzw[Vz] * fact) ? 1 : std::numeric_limits<float>::quiet_NaN())
+            );
+    
+    float t_prime = t_vec.length_sq();
+    if (std::isnan(t_prime))
+        return false;
+
+    r.t = sqrt(t_prime);
     return true;
 }
 
@@ -172,12 +203,14 @@ vec4 triangle_norm(ray &r, ray_object &obj)
 
     return vec4::norm(vec4::cross(v2-v1,v3-v1));
 }
+vec4 box_norm(ray &r, ray_object &obj)      { return NEW_VECTOR(0.9,0,0,1); }
 
 bool ray_object::hit(ray &r)
 {
     switch (this->type)
     {
-        case SPHERE:    return hit_sphere(r, *this);
+        case SPHERE:        return hit_sphere(r, *this);
+        case ALIGNED_BOX:   return hit_box(r, *this);
         case TRIANGLE:  
         {
             vec4    v1 = vpos(0),
@@ -194,8 +227,9 @@ vec4 ray_object::norm(ray &r)
 {
     switch (this->type)
     {
-        case SPHERE:    return sphere_norm(r, *this);
-        case TRIANGLE:  return triangle_norm(r, *this);
+        case SPHERE:        return sphere_norm(r, *this);
+        case ALIGNED_BOX:   return box_norm(r, *this);    
+        case TRIANGLE:      return triangle_norm(r, *this);
     }
     return VECTOR_ZERO;
 }

@@ -37,13 +37,15 @@ scene build_test_scene()
     s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(0, -3, 9, 0))));
     s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(3, 0, 9, 0))));
     s.objects.push_back(new_sphere(new_transform(NEW_VECTOR(-3, 0, 9, 0))));
-    ray_object t = new_triangle(alloc(9, float), alloc(3, int), new_transform());
-    t.vertices[0] = -0.5f; t.vertices[1] = -0.5f; t.vertices[2] = 1.f;
-    t.vertices[3] = +0.5f; t.vertices[4] = -0.5f; t.vertices[5] = 1.f;
-    t.vertices[6] = +0.0f; t.vertices[7] = +0.5f; t.vertices[8] = 1.f;
+    s.objects.push_back(new_box(NEW_VECTOR(-1, -1, 3.1), NEW_VECTOR(0, 0, 6)));
     
-    t.indices[0] = 0; t.indices[1] = 1; t.indices[2] = 2;
-    s.objects.push_back(t);
+    //ray_object t = new_triangle(alloc(9, float), alloc(3, int), new_transform());
+    //t.vertices[0] = -0.5f; t.vertices[1] = -0.5f; t.vertices[2] = 1.f;
+    //t.vertices[3] = +0.5f; t.vertices[4] = -0.5f; t.vertices[5] = 1.f;
+    //t.vertices[6] = +0.0f; t.vertices[7] = +0.5f; t.vertices[8] = 1.f;
+    //
+    //t.indices[0] = 0; t.indices[1] = 1; t.indices[2] = 2;
+    //s.objects.push_back(t);
 
     return s;
 }
